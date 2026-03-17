@@ -16,78 +16,77 @@ async function getToken() {
   return data.access_token
 }
 
-async function bfetchRaw(path, namespace, params = '') {
+async function bfetchRaw(path, namespace) {
   const token = await getToken()
-  const url = `https://${REGION}.api.blizzard.com${path}?namespace=${namespace}&locale=fr_FR${params}&access_token=${token}`
+  const url = `https://${REGION}.api.blizzard.com${path}?namespace=${namespace}&access_token=${token}`
   const res = await fetch(url, { cache: 'no-store' })
-  return { status: res.status, url, data: res.ok ? await res.json() : null }
+  let body = null
+  try { body = await res.json() } catch {}
+  return { status: res.status, url, data: body }
 }
 
 export async function GET() {
-  const displayName = process.env.NEXT_PUBLIC_GUILD_DISPLAY_NAME ||
-                      process.env.NEXT_PUBLIC_GUILD_NAME || '?'
+  const displayName = process.env.NEXT_PUBLIC_GUILD_DISPLAY_NAME || '?'
   const realm  = process.env.NEXT_PUBLIC_GUILD_REALM || '?'
 
-  const slug = displayName
+  const guildSlug = displayName
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
 
-  // 1. Search realm by name to find correct slug
-  let realmSearch = null
+  // 1. Token check
+  let tokenStatus = 'unknown'
+  let token = null
   try {
-    const r = await bfetchRaw(
-      `/data/wow/search/realm`,
-      `dynamic-${REGION}`,
-      `&name.fr_FR=Ysondre&_pageSize=5`
-    )
-    realmSearch = {
-      status: r.status,
-      results: r.data?.results?.map(x => ({
-        slug: x.data?.slug,
-        name_fr: x.data?.name?.fr_FR,
-        name_en: x.data?.name?.en_GB,
-        id: x.data?.id,
-      }))
-    }
-  } catch (e) { realmSearch = { error: e.message } }
+    token = await getToken()
+    tokenStatus = token ? '✓ obtained' : '✗ empty'
+  } catch (e) { tokenStatus = `✗ ${e.message}` }
 
-  // 2. Also try realm slug directly
-  let realmDirect = null
+  // 2. Realm index — confirms if Game Data API access works at all
+  let realmIndex = null
   try {
-    const r = await bfetchRaw(`/data/wow/realm/${realm.toLowerCase()}`, `dynamic-${REGION}`)
-    realmDirect = { status: r.status, slug: r.data?.slug, name: r.data?.name }
-  } catch (e) { realmDirect = { error: e.message } }
-
-  // 3. If we found a realm slug from search, try guild with that slug
-  let guildCheck = null
-  const foundSlug = realmSearch?.results?.[0]?.slug
-  if (foundSlug) {
-    try {
-      const r = await bfetchRaw(`/data/wow/guild/${foundSlug}/${slug}`, `profile-${REGION}`)
-      guildCheck = { status: r.status, realmUsed: foundSlug, name: r.data?.name, realm: r.data?.realm?.slug }
-      if (r.status === 200) {
-        // Also try roster
-        const r2 = await bfetchRaw(`/data/wow/guild/${foundSlug}/${slug}/roster`, `profile-${REGION}`)
-        guildCheck.rosterStatus = r2.status
-        guildCheck.memberCount = r2.data?.members?.length
+    const r = await bfetchRaw('/data/wow/realm/index', `dynamic-${REGION}`)
+    if (r.status === 200) {
+      // Search for ysondre in the list
+      const allRealms = r.data?.realms || []
+      const found = allRealms.filter(x =>
+        x.name?.toLowerCase().includes('ysondre') ||
+        x.slug?.toLowerCase().includes('ysondre')
+      )
+      realmIndex = {
+        status: 200,
+        totalRealms: allRealms.length,
+        ysondreMatches: found,
+        // Also show first 5 French-sounding realms
+        sampleFrench: allRealms
+          .filter(x => ['kirin', 'croisade', 'eldre', 'ysondre', 'arak', 'chants'].some(k => x.slug?.includes(k)))
+          .slice(0, 10)
       }
-    } catch (e) { guildCheck = { error: e.message } }
-  }
+    } else {
+      realmIndex = { status: r.status, error: r.data }
+    }
+  } catch (e) { realmIndex = { error: e.message } }
+
+  // 3. Try guild with current realm slug
+  let guildCheck = null
+  try {
+    const r = await bfetchRaw(`/data/wow/guild/${realm.toLowerCase()}/${guildSlug}`, `profile-${REGION}`)
+    guildCheck = { status: r.status, data: r.data }
+  } catch (e) { guildCheck = { error: e.message } }
 
   return Response.json({
     config: {
-      BLIZZARD_CLIENT_ID:             process.env.BLIZZARD_CLIENT_ID ? '✓ set' : '✗ missing',
-      BLIZZARD_CLIENT_SECRET:         process.env.BLIZZARD_CLIENT_SECRET ? '✓ set' : '✗ missing',
-      BLIZZARD_REGION:                REGION,
+      BLIZZARD_CLIENT_ID:    process.env.BLIZZARD_CLIENT_ID ? '✓ set' : '✗ missing',
+      BLIZZARD_CLIENT_SECRET: process.env.BLIZZARD_CLIENT_SECRET ? '✓ set' : '✗ missing',
+      BLIZZARD_REGION: REGION,
       NEXT_PUBLIC_GUILD_DISPLAY_NAME: displayName,
-      NEXT_PUBLIC_GUILD_REALM:        realm,
+      NEXT_PUBLIC_GUILD_REALM: realm,
     },
-    computed: { guildSlug: slug },
-    realmSearch,
-    realmDirect,
+    tokenStatus,
+    computed: { guildSlug },
+    realmIndex,
     guildCheck,
   })
 }
