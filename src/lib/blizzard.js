@@ -34,6 +34,7 @@ async function bfetch(path, namespace, locale = 'fr_FR') {
   const url = `${BASE_URL}${path}?namespace=${namespace}&locale=${locale}&access_token=${token}`
   const res = await fetch(url, { next: { revalidate: 300 } })
   if (!res.ok) {
+    console.error(`[Blizzard] ${res.status} — ${BASE_URL}${path} (namespace: ${namespace})`)
     if (res.status === 404) return null
     throw new Error(`Blizzard ${res.status}: ${path}`)
   }
