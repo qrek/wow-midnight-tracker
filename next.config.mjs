@@ -5,6 +5,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'render.worldofwarcraft.com' },
       { protocol: 'https', hostname: 'assets.warcraftlogs.com' },
       { protocol: 'https', hostname: 'wow.zamimg.com' },
+      { protocol: 'https', hostname: 'www.method.gg' },
     ],
   },
 }
