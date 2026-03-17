@@ -1,12 +1,11 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
-import { MOCK_GUILD } from '@/lib/mock-data'
+import { fetchPlayerData } from '@/lib/data'
 import { WOW_CLASSES, RAIDS, DUNGEONS, getParseColor, getRatingColor } from '@/lib/constants'
 
 async function getPlayerData(name) {
-  const member = MOCK_GUILD.members.find(
-    m => m.name.toLowerCase() === name.toLowerCase()
-  )
-  return member || null
+  return fetchPlayerData(name)
 }
 
 function StatBox({ label, value, color }) {

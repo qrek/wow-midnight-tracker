@@ -1,15 +1,11 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
-import { MOCK_GUILD } from '@/lib/mock-data'
+import { fetchGuildData } from '@/lib/data'
 import { WOW_CLASSES, RAIDS, DUNGEONS, getParseColor, getRatingColor } from '@/lib/constants'
 
 async function getGuildData() {
-  return {
-    ...MOCK_GUILD,
-    name:        process.env.NEXT_PUBLIC_GUILD_NAME         || MOCK_GUILD.name,
-    displayName: process.env.NEXT_PUBLIC_GUILD_DISPLAY_NAME || MOCK_GUILD.displayName,
-    realm:       process.env.NEXT_PUBLIC_GUILD_REALM        || MOCK_GUILD.realm,
-    region:      (process.env.NEXT_PUBLIC_GUILD_REGION      || MOCK_GUILD.region).toUpperCase(),
-  }
+  return fetchGuildData()
 }
 
 function ClassBadge({ classID, spec }) {
