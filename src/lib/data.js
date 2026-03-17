@@ -56,7 +56,7 @@ export async function fetchGuildData() {
     }
 
     const chars = roster.members
-      .filter(m => m.character?.level >= 1) // pas de filtre de niveau
+      .filter(m => m.character?.level >= 90)
       .slice(0, 50)
 
     const results = await Promise.allSettled(
