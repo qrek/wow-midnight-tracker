@@ -1,7 +1,5 @@
 export const dynamic = 'force-dynamic'
 
-import { getGuildRoster } from '@/lib/blizzard'
-
 const REGION = process.env.BLIZZARD_REGION || 'eu'
 
 async function getToken() {
@@ -18,9 +16,9 @@ async function getToken() {
   return data.access_token
 }
 
-async function bfetchRaw(path, namespace) {
+async function bfetchRaw(path, namespace, params = '') {
   const token = await getToken()
-  const url = `https://${REGION}.api.blizzard.com${path}?namespace=${namespace}&locale=fr_FR&access_token=${token}`
+  const url = `https://${REGION}.api.blizzard.com${path}?namespace=${namespace}&locale=fr_FR${params}&access_token=${token}`
   const res = await fetch(url, { cache: 'no-store' })
   return { status: res.status, url, data: res.ok ? await res.json() : null }
 }
@@ -37,28 +35,47 @@ export async function GET() {
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
 
-  // 1. Check realm info to find connected realm / correct slug
-  let realmInfo = null
-  let realmError = null
+  // 1. Search realm by name to find correct slug
+  let realmSearch = null
+  try {
+    const r = await bfetchRaw(
+      `/data/wow/search/realm`,
+      `dynamic-${REGION}`,
+      `&name.fr_FR=Ysondre&_pageSize=5`
+    )
+    realmSearch = {
+      status: r.status,
+      results: r.data?.results?.map(x => ({
+        slug: x.data?.slug,
+        name_fr: x.data?.name?.fr_FR,
+        name_en: x.data?.name?.en_GB,
+        id: x.data?.id,
+      }))
+    }
+  } catch (e) { realmSearch = { error: e.message } }
+
+  // 2. Also try realm slug directly
+  let realmDirect = null
   try {
     const r = await bfetchRaw(`/data/wow/realm/${realm.toLowerCase()}`, `dynamic-${REGION}`)
-    realmInfo = { status: r.status, slug: r.data?.slug, name: r.data?.name, connectedRealm: r.data?.connected_realm?.href }
-  } catch (e) { realmError = e.message }
+    realmDirect = { status: r.status, slug: r.data?.slug, name: r.data?.name }
+  } catch (e) { realmDirect = { error: e.message } }
 
-  // 2. Try guild base endpoint (no roster)
-  let guildBase = null
-  try {
-    const r = await bfetchRaw(`/data/wow/guild/${realm.toLowerCase()}/${slug}`, `profile-${REGION}`)
-    guildBase = { status: r.status, name: r.data?.name, realm: r.data?.realm?.slug }
-  } catch (e) { guildBase = { error: e.message } }
-
-  // 3. Try guild roster
-  let rosterResult = null
-  let rosterError  = null
-  try {
-    const r = await getGuildRoster(realm, displayName)
-    rosterResult = r ? `OK — ${r.members?.length} membres` : 'null (404)'
-  } catch (e) { rosterError = e.message }
+  // 3. If we found a realm slug from search, try guild with that slug
+  let guildCheck = null
+  const foundSlug = realmSearch?.results?.[0]?.slug
+  if (foundSlug) {
+    try {
+      const r = await bfetchRaw(`/data/wow/guild/${foundSlug}/${slug}`, `profile-${REGION}`)
+      guildCheck = { status: r.status, realmUsed: foundSlug, name: r.data?.name, realm: r.data?.realm?.slug }
+      if (r.status === 200) {
+        // Also try roster
+        const r2 = await bfetchRaw(`/data/wow/guild/${foundSlug}/${slug}/roster`, `profile-${REGION}`)
+        guildCheck.rosterStatus = r2.status
+        guildCheck.memberCount = r2.data?.members?.length
+      }
+    } catch (e) { guildCheck = { error: e.message } }
+  }
 
   return Response.json({
     config: {
@@ -68,12 +85,9 @@ export async function GET() {
       NEXT_PUBLIC_GUILD_DISPLAY_NAME: displayName,
       NEXT_PUBLIC_GUILD_REALM:        realm,
     },
-    computed: {
-      guildSlug: slug,
-      rosterUrl: `https://${REGION}.api.blizzard.com/data/wow/guild/${realm.toLowerCase()}/${slug}/roster`,
-    },
-    realmCheck:  realmInfo  || { error: realmError },
-    guildCheck:  guildBase,
-    rosterCheck: { result: rosterResult, error: rosterError },
+    computed: { guildSlug: slug },
+    realmSearch,
+    realmDirect,
+    guildCheck,
   })
 }
