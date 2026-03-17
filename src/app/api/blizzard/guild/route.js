@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getGuildRoster } from '@/lib/blizzard'
 import { MOCK_GUILD } from '@/lib/mock-data'
 

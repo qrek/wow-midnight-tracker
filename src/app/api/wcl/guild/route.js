@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { wclQuery, GUILD_ROSTER_QUERY } from '@/lib/wcl'
 import { MOCK_GUILD } from '@/lib/mock-data'
 
