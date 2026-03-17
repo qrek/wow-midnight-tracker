@@ -28,11 +28,15 @@ const useWCL = () =>
   process.env.WCL_CLIENT_ID !== 'your_wcl_client_id'
 
 function guildMeta() {
+  // displayName (ex: "Le Chalet du Bonheur") est utilisé pour le slug Blizzard
+  const displayName = process.env.NEXT_PUBLIC_GUILD_DISPLAY_NAME ||
+                      process.env.NEXT_PUBLIC_GUILD_NAME         ||
+                      MOCK_GUILD.displayName
   return {
-    name:        process.env.NEXT_PUBLIC_GUILD_NAME         || MOCK_GUILD.name,
-    displayName: process.env.NEXT_PUBLIC_GUILD_DISPLAY_NAME || MOCK_GUILD.displayName,
-    realm:       process.env.NEXT_PUBLIC_GUILD_REALM        || MOCK_GUILD.realm,
-    region:      (process.env.NEXT_PUBLIC_GUILD_REGION      || MOCK_GUILD.region).toUpperCase(),
+    name:        displayName,
+    displayName: displayName,
+    realm:       process.env.NEXT_PUBLIC_GUILD_REALM   || MOCK_GUILD.realm,
+    region:      (process.env.NEXT_PUBLIC_GUILD_REGION || MOCK_GUILD.region).toUpperCase(),
     faction:     MOCK_GUILD.faction,
   }
 }
@@ -46,10 +50,13 @@ export async function fetchGuildData() {
 
   try {
     const roster = await getGuildRoster(meta.realm.toLowerCase(), meta.name)
-    if (!roster?.members?.length) return { ...MOCK_GUILD, ...meta }
+    if (!roster?.members?.length) {
+      console.error('[fetchGuildData] Roster vide ou null:', roster)
+      return { ...MOCK_GUILD, ...meta }
+    }
 
     const chars = roster.members
-      .filter(m => m.character?.level >= 70)
+      .filter(m => m.character?.level >= 1) // pas de filtre de niveau
       .slice(0, 50)
 
     const results = await Promise.allSettled(

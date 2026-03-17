@@ -71,7 +71,14 @@ export async function getCharacterEquipment(realm, name) {
 }
 
 export async function getGuildRoster(realm, guildName) {
-  const slug = guildName.toLowerCase().replace(/\s+/g, '-').replace(/'/g, '')
+  // Blizzard slug: lowercase, accents stripped, spaces → hyphens, special chars removed
+  const slug = guildName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip accents (é→e, è→e, etc.)
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+  console.log('[Blizzard] guild slug:', slug, 'realm:', realm.toLowerCase())
   return bfetch(
     `/data/wow/guild/${realm.toLowerCase()}/${slug}/roster`,
     `profile-${REGION}`
