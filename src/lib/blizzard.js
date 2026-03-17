@@ -29,12 +29,15 @@ async function getToken() {
   return _token
 }
 
-async function bfetch(path, namespace, locale = 'fr_FR') {
+async function bfetch(path, namespace, locale = 'en_GB') {
   const token = await getToken()
-  const url = `${BASE_URL}${path}?namespace=${namespace}&locale=${locale}&access_token=${token}`
-  const res = await fetch(url, { next: { revalidate: 300 } })
+  const url = `${BASE_URL}${path}?namespace=${namespace}&locale=${locale}`
+  const res = await fetch(url, {
+    next: { revalidate: 300 },
+    headers: { Authorization: `Bearer ${token}` },
+  })
   if (!res.ok) {
-    console.error(`[Blizzard] ${res.status} — ${BASE_URL}${path} (namespace: ${namespace})`)
+    console.error(`[Blizzard] ${res.status} — ${url}`)
     if (res.status === 404) return null
     throw new Error(`Blizzard ${res.status}: ${path}`)
   }
