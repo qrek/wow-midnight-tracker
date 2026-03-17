@@ -17,7 +17,6 @@ async function getToken() {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=client_credentials',
-    cache: 'no-store',
   })
 
   if (!res.ok) throw new Error(`WCL auth failed: ${res.status}`)
