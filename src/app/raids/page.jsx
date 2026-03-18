@@ -230,16 +230,32 @@ const DIFFICULTY_COLOR = {
   "Très élevée":  "text-orange-400",
 }
 
-function BossCard({ boss }) {
+function YoutubeIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </svg>
+  )
+}
+
+function getYoutubeId(url) {
+  if (!url) return null
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
+  return m?.[1] || null
+}
+
+function BossCard({ boss, raidName }) {
   const [open, setOpen] = useState(false)
+  const [showVideo, setShowVideo] = useState(false)
   const interruptCount = boss.mechanics.filter(m => m.interrupt).length
   const dispelCount = boss.mechanics.filter(m => m.dispel).length
   const highPrio = boss.mechanics.filter(m => m.priority === "HIGH").length
+  const youtubeId = getYoutubeId(boss.videoUrl)
+  const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`wow midnight ${raidName} ${boss.name} raid guide`)}`
 
   return (
     <div className="rounded-xl border border-void-700/60 bg-void-900/60 overflow-hidden">
-      <button onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-4 p-4 hover:bg-void-800/40 transition-colors text-left">
+      <div className="flex items-center gap-4 p-4">
         <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-void-800 border border-void-600 relative">
           <img src={boss.image} alt={boss.name} className="w-full h-full object-cover"
             onError={e => { e.target.style.display = "none" }} />
@@ -247,7 +263,7 @@ function BossCard({ boss }) {
             {boss.order}
           </div>
         </div>
-        <div className="flex-1 min-w-0">
+        <button onClick={() => setOpen(v => !v)} className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-void-500 font-medium">{boss.role}</span>
             {boss.difficulty && (
@@ -275,12 +291,52 @@ function BossCard({ boss }) {
               </span>
             )}
           </div>
+        </button>
+        {/* Video button */}
+        {youtubeId ? (
+          <button
+            onClick={() => setShowVideo(v => !v)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex-shrink-0
+              ${showVideo ? "bg-red-600/20 border-red-500/50 text-red-400" : "bg-red-900/20 border-red-800/40 text-red-400 hover:bg-red-600/20 hover:border-red-500/50"}`}
+            title="Voir la vidéo guide"
+          >
+            <YoutubeIcon />
+            <span className="hidden sm:inline">{showVideo ? "Fermer" : "Vidéo"}</span>
+          </button>
+        ) : (
+          <a
+            href={searchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-void-800/60 border border-void-700/40 text-void-500 hover:text-red-400 hover:border-red-800/40 transition-all flex-shrink-0"
+            title="Rechercher une vidéo guide sur YouTube"
+          >
+            <YoutubeIcon />
+            <span className="hidden sm:inline">Rechercher</span>
+          </a>
+        )}
+        <button onClick={() => setOpen(v => !v)} className="flex-shrink-0">
+          <svg className={`w-4 h-4 text-void-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* YouTube embed */}
+      {showVideo && youtubeId && (
+        <div className="border-t border-void-700/50 bg-black/30">
+          <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
+              title={`Guide vidéo — ${boss.name}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
         </div>
-        <svg className={`w-4 h-4 text-void-400 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+      )}
 
       {open && (
         <div className="border-t border-void-700/50 p-4">
@@ -442,7 +498,7 @@ export default function RaidsPage() {
 
           {/* Boss cards */}
           <div className="space-y-3">
-            {raid.bossData.map((boss, i) => <BossCard key={i} boss={boss} />)}
+            {raid.bossData.map((boss, i) => <BossCard key={i} boss={boss} raidName={raid.name} />)}
           </div>
 
           {raid.id === "queldanas" && (
