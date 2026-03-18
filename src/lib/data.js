@@ -211,7 +211,7 @@ export async function fetchPlayerData(name) {
     // ── Equipment ─────────────────────────────────────────────────────────────
     const equipment = (equip?.equipped_items || []).map(item => ({
       slot:    item.slot?.type || 'UNKNOWN',
-      name:    item.item?.name || 'Unknown Item',
+      name:    item.name || item.item?.name || 'Unknown Item',
       ilvl:    item.level?.value || 0,
       quality: item.quality?.type || 'COMMON',
       enchant: item.enchantments?.[0]?.display_string?.replace(/<[^>]+>/g, '') || null,
