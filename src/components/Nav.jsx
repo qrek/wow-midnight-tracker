@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -55,13 +56,10 @@ const NAV_LINKS = [
   },
 ]
 
-export default function Nav() {
-  const pathname = usePathname()
+function NavLinks({ pathname, onClick }) {
   const guildName = process.env.NEXT_PUBLIC_GUILD_DISPLAY_NAME || 'Midnight Tracker'
-
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-void-900 border-r border-void-700 flex flex-col z-50">
-
+    <>
       {/* Logo */}
       <div className="px-6 py-5 border-b border-void-700">
         <div className="flex items-center gap-3">
@@ -70,9 +68,7 @@ export default function Nav() {
             🌙
           </div>
           <div>
-            <div className="font-bold text-gold-500 text-sm tracking-widest leading-tight">
-              MIDNIGHT
-            </div>
+            <div className="font-bold text-gold-500 text-sm tracking-widest leading-tight">MIDNIGHT</div>
             <div className="text-void-400 text-xs tracking-wider">TRACKER</div>
           </div>
         </div>
@@ -85,14 +81,12 @@ export default function Nav() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {NAV_LINKS.map(link => {
-          const isActive =
-            pathname === link.href ||
-            (link.href !== '/' && pathname.startsWith(link.href))
-
+          const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
           return (
             <Link
               key={link.href}
               href={link.href}
+              onClick={onClick}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
                           transition-all duration-200 group
                           ${isActive
@@ -104,9 +98,7 @@ export default function Nav() {
                 {link.icon}
               </span>
               <span>{link.label}</span>
-              {isActive && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-arcane-400" />
-              )}
+              {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-arcane-400" />}
             </Link>
           )
         })}
@@ -117,13 +109,79 @@ export default function Nav() {
         <div className="text-xs text-void-500 text-center space-y-1">
           <div className="text-void-400 font-medium">WoW Midnight · S1</div>
           <div className="flex items-center justify-center gap-3 text-void-600">
-            <span>WCL API</span>
-            <span>·</span>
-            <span>Blizzard API</span>
+            <span>WCL API</span><span>·</span><span>Blizzard API</span>
           </div>
         </div>
       </div>
+    </>
+  )
+}
 
-    </aside>
+export default function Nav() {
+  const pathname = usePathname()
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      {/* ── Desktop sidebar (md+) ─────────────────────────────────────────── */}
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-void-900 border-r border-void-700 flex-col z-50">
+        <NavLinks pathname={pathname} />
+      </aside>
+
+      {/* ── Mobile top bar ────────────────────────────────────────────────── */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-void-900 border-b border-void-700 z-50 flex items-center px-4 gap-3">
+        <button
+          onClick={() => setOpen(true)}
+          className="p-2 rounded-lg text-void-400 hover:text-void-100 hover:bg-void-800 transition-colors"
+          aria-label="Menu"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🌙</span>
+          <span className="font-bold text-gold-500 text-sm tracking-widest">MIDNIGHT</span>
+          <span className="text-void-500 text-xs tracking-wider">TRACKER</span>
+        </div>
+        {/* Current page indicator */}
+        <div className="ml-auto">
+          {NAV_LINKS.find(l => l.href === pathname || (l.href !== '/' && pathname.startsWith(l.href))) && (
+            <span className="text-xs text-arcane-400 font-medium">
+              {NAV_LINKS.find(l => l.href === pathname || (l.href !== '/' && pathname.startsWith(l.href)))?.label}
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* ── Mobile drawer overlay ─────────────────────────────────────────── */}
+      {open && (
+        <div
+          className="md:hidden fixed inset-0 z-50 flex"
+          onClick={() => setOpen(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+          {/* Drawer */}
+          <aside
+            className="relative w-72 max-w-[85vw] h-full bg-void-900 border-r border-void-700 flex flex-col z-10"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-void-400 hover:text-void-100 hover:bg-void-800 transition-colors"
+              aria-label="Fermer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <NavLinks pathname={pathname} onClick={() => setOpen(false)} />
+          </aside>
+        </div>
+      )}
+    </>
   )
 }

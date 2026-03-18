@@ -1,5 +1,38 @@
 // Données mock pour la guilde — remplacées automatiquement quand les vraies clés API sont ajoutées
 
+const QUALITY_BY_ILVL = (ilvl) => ilvl >= 658 ? 'LEGENDARY' : ilvl >= 639 ? 'EPIC' : 'RARE'
+
+const ENCHANTS = {
+  NECK:       'Collier de Rapidité Stellaire',
+  BACK:       'Enchantement : Esquive du Vide',
+  CHEST:      'Enchantement : Endurance Primordiale',
+  WRIST:      'Enchantement : Célérité Arcanîque',
+  MAIN_HAND:  'Enchantement : Tranchant du Vide',
+  FINGER_1:   'Enchantement : Vitesse Runique',
+  FINGER_2:   'Enchantement : Vitesse Runique',
+  LEGS:       'Renforts Arcanîques',
+  FEET:       'Enchantement : Agilité du Vent',
+}
+
+const makeEquip = (base) => [
+  { slot: 'HEAD',      name: 'Heaume de la Corruption du Vide',     ilvl: base,     quality: QUALITY_BY_ILVL(base),     enchant: null,              gem: null },
+  { slot: 'NECK',      name: 'Pendentif des Étoiles Mourantes',     ilvl: base - 3, quality: QUALITY_BY_ILVL(base - 3), enchant: ENCHANTS.NECK,     gem: null },
+  { slot: 'SHOULDER',  name: 'Épaulières du Pacte Brisé',           ilvl: base,     quality: QUALITY_BY_ILVL(base),     enchant: null,              gem: null },
+  { slot: 'BACK',      name: 'Cape du Voyageur du Néant',           ilvl: base - 3, quality: QUALITY_BY_ILVL(base - 3), enchant: ENCHANTS.BACK,     gem: null },
+  { slot: 'CHEST',     name: 'Plastron de la Couronne du Cosmos',   ilvl: base + 3, quality: QUALITY_BY_ILVL(base + 3), enchant: ENCHANTS.CHEST,    gem: 'Pierre du Vide Taillée' },
+  { slot: 'WRIST',     name: 'Brassards du Marcheur des Ombres',    ilvl: base - 3, quality: QUALITY_BY_ILVL(base - 3), enchant: ENCHANTS.WRIST,    gem: null },
+  { slot: 'HANDS',     name: 'Gantelets du Seigneur du Néant',      ilvl: base,     quality: QUALITY_BY_ILVL(base),     enchant: null,              gem: null },
+  { slot: 'WAIST',     name: 'Ceinture de la Sentinelle Aveuglée',  ilvl: base - 3, quality: QUALITY_BY_ILVL(base - 3), enchant: null,              gem: null },
+  { slot: 'LEGS',      name: 'Jambières du Roi Déchu',              ilvl: base,     quality: QUALITY_BY_ILVL(base),     enchant: ENCHANTS.LEGS,     gem: null },
+  { slot: 'FEET',      name: 'Bottes du Traqueur du Vide',          ilvl: base - 3, quality: QUALITY_BY_ILVL(base - 3), enchant: ENCHANTS.FEET,     gem: null },
+  { slot: 'FINGER_1',  name: 'Anneau de Xal\'atath',                ilvl: base,     quality: QUALITY_BY_ILVL(base),     enchant: ENCHANTS.FINGER_1, gem: null },
+  { slot: 'FINGER_2',  name: 'Bague du Voidspire',                  ilvl: base - 3, quality: QUALITY_BY_ILVL(base - 3), enchant: ENCHANTS.FINGER_2, gem: null },
+  { slot: 'TRINKET_1', name: 'Orbe du Cosmos Brisé',                ilvl: base,     quality: QUALITY_BY_ILVL(base),     enchant: null,              gem: null },
+  { slot: 'TRINKET_2', name: 'Fragment de la Couronne de Minuit',   ilvl: base + 3, quality: QUALITY_BY_ILVL(base + 3), enchant: null,              gem: null },
+  { slot: 'MAIN_HAND', name: 'Lame de la Chute de Minuit',          ilvl: base + 3, quality: QUALITY_BY_ILVL(base + 3), enchant: ENCHANTS.MAIN_HAND, gem: null },
+  { slot: 'OFF_HAND',  name: 'Focalisateur du Vide Concentré',      ilvl: base,     quality: QUALITY_BY_ILVL(base),     enchant: null,              gem: null },
+]
+
 const rp = (m40, n40, m41, n41, m42, n42) => ({
   40: { mythic: { killed: m40, total: 7 }, normal: { killed: n40, total: 7 } },
   41: { mythic: { killed: m41, total: 5 }, normal: { killed: n41, total: 5 } },
@@ -144,7 +177,7 @@ export const MOCK_GUILD = {
       bestKeys: { 1: 17, 2: 16, 3: 17, 4: 17, 5: 15, 6: 16, 7: 15, 8: 17 },
       performance: { dps: 404300, hps: 0 },
     },
-  ],
+  ].map(m => ({ ...m, equipment: makeEquip(m.itemLevel) })),
 }
 
 // ─── Mock World Rankings ────────────────────────────────────────────────────

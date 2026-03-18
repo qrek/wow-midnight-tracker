@@ -5,6 +5,7 @@ import {
   getCharacterProfile,
   getCharacterMythicKeystone,
   getCharacterRaids,
+  getCharacterEquipment,
 } from './blizzard'
 import { wclQuery, CHARACTER_ZONE_RANKINGS_QUERY } from './wcl'
 import { MOCK_GUILD } from './mock-data'
@@ -122,17 +123,19 @@ export async function fetchPlayerData(name) {
   }
 
   try {
-    const [profileRes, mkRes, raidsRes] = await Promise.allSettled([
+    const [profileRes, mkRes, raidsRes, equipRes] = await Promise.allSettled([
       getCharacterProfile(realm, name.toLowerCase()),
       getCharacterMythicKeystone(realm, name.toLowerCase()),
       getCharacterRaids(realm, name.toLowerCase()),
+      getCharacterEquipment(realm, name.toLowerCase()),
     ])
 
     const profile = profileRes.status === 'fulfilled' ? profileRes.value : null
     if (!profile) return null
 
-    const mk    = mkRes.status    === 'fulfilled' ? mkRes.value    : null
-    const raids = raidsRes.status === 'fulfilled' ? raidsRes.value : null
+    const mk      = mkRes.status    === 'fulfilled' ? mkRes.value    : null
+    const raids   = raidsRes.status === 'fulfilled' ? raidsRes.value : null
+    const equip   = equipRes.status === 'fulfilled' ? equipRes.value : null
 
     const spec    = profile.active_spec?.name || '?'
     const classID = profile.character_class?.id || 0
@@ -205,6 +208,17 @@ export async function fetchPlayerData(name) {
       } catch { /* WCL optionnel */ }
     }
 
+    // ── Equipment ─────────────────────────────────────────────────────────────
+    const equipment = (equip?.equipped_items || []).map(item => ({
+      slot:    item.slot?.type || 'UNKNOWN',
+      name:    item.item?.name || 'Unknown Item',
+      ilvl:    item.level?.value || 0,
+      quality: item.quality?.type || 'COMMON',
+      enchant: item.enchantments?.[0]?.display_string?.replace(/<[^>]+>/g, '') || null,
+      gem:     item.sockets?.find(s => s.item)?.item?.name || null,
+      itemId:  item.item?.id || null,
+    }))
+
     return {
       id:           profile.id,
       name:         profile.name,
@@ -219,6 +233,7 @@ export async function fetchPlayerData(name) {
       raidProgress,
       wcl,
       bestKeys,
+      equipment,
       performance: { dps: 0, hps: 0 },
     }
   } catch (err) {
