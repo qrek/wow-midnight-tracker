@@ -47,20 +47,36 @@ function ParseBar({ value, max = 100 }) {
 
 function RaidProgressDots({ progress }) {
   return (
-    <div className="flex items-center gap-1">
-      {RAIDS.map(raid => {
-        const p = progress[raid.id]
-        const ratio = p ? p.killed / p.total : 0
-        const color = ratio === 1 ? '#c89b3c' : ratio >= 0.5 ? '#a78bfa' : ratio > 0 ? '#60a5fa' : '#1a2644'
-        return (
-          <div
-            key={raid.id}
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: color }}
-            title={`${raid.shortName}: ${p?.killed || 0}/${p?.total || 0}`}
-          />
-        )
-      })}
+    <div className="space-y-1">
+      {[
+        { key: 'mythic', label: 'M', labelColor: '#a78bfa' },
+        { key: 'normal', label: 'N', labelColor: '#4ade80' },
+      ].map(({ key, label, labelColor }) => (
+        <div key={key} className="flex items-center gap-1.5">
+          <span className="text-[9px] font-bold w-3 flex-shrink-0" style={{ color: labelColor }}>{label}</span>
+          <div className="flex items-center gap-0.5">
+            {RAIDS.map(raid => {
+              const p = progress[raid.id]?.[key]
+              const ratio = p ? p.killed / p.total : 0
+              const color = key === 'mythic'
+                ? (ratio === 1 ? '#c89b3c' : ratio >= 0.5 ? '#a78bfa' : ratio > 0 ? '#60a5fa' : '#1a2644')
+                : (ratio === 1 ? '#c89b3c' : ratio >= 0.5 ? '#4ade80' : ratio > 0 ? '#86efac' : '#1a2644')
+              return (
+                <div
+                  key={raid.id}
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: color }}
+                  title={`${raid.shortName} ${label}: ${p?.killed || 0}/${p?.total || 0}`}
+                />
+              )
+            })}
+          </div>
+          <span className="text-[9px] text-void-600">
+            {RAIDS.reduce((sum, r) => sum + (progress[r.id]?.[key]?.killed || 0), 0)}/
+            {RAIDS.reduce((sum, r) => sum + (progress[r.id]?.[key]?.total  || 0), 0)}
+          </span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -142,9 +158,9 @@ export default async function RosterPage() {
   const avgRating = Math.round(guild.members.reduce((s, m) => s + m.mythicRating, 0) / guild.members.length)
   const avgParse  = Math.round(guild.members.reduce((s, m) => s + m.wcl.best,    0) / guild.members.length)
 
-  // Best overall raid progress
+  // Best overall raid progress (mythic)
   const bestProgress = guild.members.reduce((best, m) => {
-    const total = Object.values(m.raidProgress).reduce((s, p) => s + p.killed, 0)
+    const total = Object.values(m.raidProgress).reduce((s, p) => s + (p.mythic?.killed || 0), 0)
     return total > best ? total : best
   }, 0)
 
@@ -170,28 +186,38 @@ export default async function RosterPage() {
       <div className="grid grid-cols-3 gap-4 mb-8">
         {RAIDS.map(raid => {
           const members = guild.members.filter(m => m.raidProgress[raid.id])
-          const bestKills = Math.max(...members.map(m => m.raidProgress[raid.id]?.killed || 0))
+          const bestMythic = Math.max(...members.map(m => m.raidProgress[raid.id]?.mythic?.killed || 0))
+          const bestNormal = Math.max(...members.map(m => m.raidProgress[raid.id]?.normal?.killed || 0))
           const total = raid.bosses.length
-          const pct = Math.round((bestKills / total) * 100)
+          const pctM = Math.round((bestMythic / total) * 100)
+          const pctN = Math.round((bestNormal / total) * 100)
           return (
             <div key={raid.id} className="card p-4">
               <div className="flex justify-between items-start mb-3">
-                <div>
-                  <div className="text-xs text-void-500 mb-0.5">Raid Mythique</div>
-                  <div className="font-semibold text-void-100 text-sm">{raid.name}</div>
+                <div className="font-semibold text-void-100 text-sm">{raid.name}</div>
+              </div>
+              {/* Normal */}
+              <div className="mb-2">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold text-green-400">Normal</span>
+                  <span className="text-[10px] font-bold text-green-400">{bestNormal}/{total}</span>
                 </div>
-                <span className="text-gold-500 font-bold text-sm">{bestKills}/{total}</span>
+                <div className="h-1.5 bg-void-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pctN}%`, backgroundColor: pctN === 100 ? '#c89b3c' : '#4ade80' }} />
+                </div>
               </div>
-              <div className="h-1.5 bg-void-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: pct === 100 ? '#c89b3c' : pct >= 50 ? '#8b5cf6' : '#3b82f6',
-                  }}
-                />
+              {/* Mythic */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold text-purple-400">Mythique</span>
+                  <span className="text-[10px] font-bold text-purple-400">{bestMythic}/{total}</span>
+                </div>
+                <div className="h-1.5 bg-void-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pctM}%`, backgroundColor: pctM === 100 ? '#c89b3c' : pctM >= 50 ? '#8b5cf6' : '#3b82f6' }} />
+                </div>
               </div>
-              <div className="text-xs text-void-500 mt-1.5">{pct}% progression</div>
             </div>
           )
         })}
