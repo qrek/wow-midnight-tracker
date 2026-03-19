@@ -65,17 +65,51 @@ export async function fetchGuildData() {
         const n = m.character.name.toLowerCase()
         const r = m.character.realm?.slug || meta.realm.toLowerCase()
 
-        const [profileRes, mkRes] = await Promise.allSettled([
+        const [profileRes, mkRes, raidsRes] = await Promise.allSettled([
           getCharacterProfile(r, n),
           getCharacterMythicKeystone(r, n),
+          getCharacterRaids(r, n),
         ])
 
         const profile = profileRes.status === 'fulfilled' ? profileRes.value : null
         const mk      = mkRes.status      === 'fulfilled' ? mkRes.value      : null
+        const raids   = raidsRes.status   === 'fulfilled' ? raidsRes.value   : null
         if (!profile) return null
 
         const spec    = profile.active_spec?.name || '?'
         const classID = profile.character_class?.id || m.character.playable_class?.id || 0
+
+        // ── Raid progress ──────────────────────────────────────────────────────
+        const raidProgress = {
+          40: { mythic: { killed: 0, total: 7 }, normal: { killed: 0, total: 7 } },
+          41: { mythic: { killed: 0, total: 5 }, normal: { killed: 0, total: 5 } },
+          42: { mythic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } },
+        }
+        if (raids?.expansions) {
+          for (const exp of raids.expansions) {
+            for (const inst of (exp.instances || [])) {
+              const raid = RAIDS.find(r2 =>
+                r2.name.toLowerCase() === inst.instance?.name?.toLowerCase()
+              )
+              if (raid) {
+                const mythicMode = inst.modes?.find(m2 => m2.difficulty?.type === 'MYTHIC')
+                const normalMode = inst.modes?.find(m2 => m2.difficulty?.type === 'NORMAL')
+                if (mythicMode?.progress) {
+                  raidProgress[raid.id].mythic = {
+                    killed: mythicMode.progress.completed_count || 0,
+                    total:  mythicMode.progress.total_count     || raid.bosses.length,
+                  }
+                }
+                if (normalMode?.progress) {
+                  raidProgress[raid.id].normal = {
+                    killed: normalMode.progress.completed_count || 0,
+                    total:  normalMode.progress.total_count     || raid.bosses.length,
+                  }
+                }
+              }
+            }
+          }
+        }
 
         return {
           id:           profile.id || m.character.id,
@@ -88,7 +122,7 @@ export async function fetchGuildData() {
           itemLevel:    profile.average_item_level || 0,
           mythicRating: Math.round(mk?.current_mythic_rating?.rating || 0),
           weeklyKey:    null,
-          raidProgress: { 40: { mythic: { killed: 0, total: 7 }, normal: { killed: 0, total: 7 } }, 41: { mythic: { killed: 0, total: 5 }, normal: { killed: 0, total: 5 } }, 42: { mythic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } } },
+          raidProgress,
           wcl:          { best: 0, median: 0, kills: 0 },
           bestKeys:     {},
           performance:  { dps: 0, hps: 0 },
