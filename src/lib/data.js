@@ -191,9 +191,9 @@ export async function fetchPlayerData(name) {
 
     // ── Raid progress ─────────────────────────────────────────────────────────
     const raidProgress = {
-      40: { mythic: { killed: 0, total: 7 }, normal: { killed: 0, total: 7 } },
-      41: { mythic: { killed: 0, total: 5 }, normal: { killed: 0, total: 5 } },
-      42: { mythic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } },
+      40: { mythic: { killed: 0, total: 7 }, heroic: { killed: 0, total: 7 }, normal: { killed: 0, total: 7 } },
+      41: { mythic: { killed: 0, total: 5 }, heroic: { killed: 0, total: 5 }, normal: { killed: 0, total: 5 } },
+      42: { mythic: { killed: 0, total: 6 }, heroic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } },
     }
     if (raids?.expansions) {
       for (const exp of raids.expansions) {
@@ -203,11 +203,18 @@ export async function fetchPlayerData(name) {
           )
           if (raid) {
             const mythicMode = inst.modes?.find(m => m.difficulty?.type === 'MYTHIC')
-            const normalMode = inst.modes?.find(m => m.difficulty?.type === 'NORMAL')
+            const heroicMode  = inst.modes?.find(m => m.difficulty?.type === 'HEROIC')
+            const normalMode  = inst.modes?.find(m => m.difficulty?.type === 'NORMAL')
             if (mythicMode?.progress) {
               raidProgress[raid.id].mythic = {
                 killed: mythicMode.progress.completed_count || 0,
                 total:  mythicMode.progress.total_count     || raid.bosses.length,
+              }
+            }
+            if (heroicMode?.progress) {
+              raidProgress[raid.id].heroic = {
+                killed: heroicMode.progress.completed_count || 0,
+                total:  heroicMode.progress.total_count     || raid.bosses.length,
               }
             }
             if (normalMode?.progress) {

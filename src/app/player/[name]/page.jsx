@@ -197,10 +197,12 @@ export default async function PlayerPage({ params }) {
           </h2>
           <div className="space-y-4">
             {RAIDS.map(raid => {
-              const prog   = player.raidProgress[raid.id] || { mythic: { killed: 0, total: raid.bosses.length }, normal: { killed: 0, total: raid.bosses.length } }
+              const prog   = player.raidProgress[raid.id] || { mythic: { killed: 0, total: raid.bosses.length }, heroic: { killed: 0, total: raid.bosses.length }, normal: { killed: 0, total: raid.bosses.length } }
               const mythic = prog.mythic || { killed: 0, total: raid.bosses.length }
+              const heroic = prog.heroic || { killed: 0, total: raid.bosses.length }
               const normal = prog.normal || { killed: 0, total: raid.bosses.length }
               const mPct   = Math.round((mythic.killed / (mythic.total || 1)) * 100)
+              const hPct   = Math.round((heroic.killed / (heroic.total || 1)) * 100)
               const nPct   = Math.round((normal.killed / (normal.total || 1)) * 100)
               const mColor = mPct === 100 ? '#c89b3c' : mPct >= 60 ? '#8b5cf6' : '#3b82f6'
               return (
@@ -231,6 +233,33 @@ export default async function PlayerPage({ params }) {
                     </div>
                     <div className="h-1 bg-void-800 rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${mPct}%`, backgroundColor: mColor }} />
+                    </div>
+                  </div>
+
+                  {/* Heroic row */}
+                  <div className="mb-2">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs text-void-500 uppercase tracking-wider">Héroïque</span>
+                      <span className="font-bold text-xs text-blue-400">{heroic.killed}/{heroic.total}</span>
+                    </div>
+                    <div className="flex gap-1 flex-wrap mb-1.5">
+                      {raid.bosses.map((boss, i) => (
+                        <div
+                          key={boss.id}
+                          className="w-5 h-5 rounded flex items-center justify-center text-[10px]"
+                          style={{
+                            backgroundColor: i < heroic.killed ? 'rgba(96,165,250,0.15)' : '#0f1730',
+                            border: `1px solid ${i < heroic.killed ? '#60a5fa' : '#1a2644'}`,
+                            color: i < heroic.killed ? '#60a5fa' : '#4a5572',
+                          }}
+                          title={boss.name}
+                        >
+                          {i < heroic.killed ? '✓' : i + 1}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="h-1 bg-void-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${hPct}%`, backgroundColor: hPct === 100 ? '#c89b3c' : '#60a5fa' }} />
                     </div>
                   </div>
 

@@ -50,6 +50,7 @@ function RaidProgressDots({ progress }) {
     <div className="space-y-1">
       {[
         { key: 'mythic', label: 'M', labelColor: '#a78bfa' },
+        { key: 'heroic', label: 'H', labelColor: '#60a5fa' },
         { key: 'normal', label: 'N', labelColor: '#4ade80' },
       ].map(({ key, label, labelColor }) => (
         <div key={key} className="flex items-center gap-1.5">
@@ -59,7 +60,9 @@ function RaidProgressDots({ progress }) {
               const p = progress[raid.id]?.[key]
               const ratio = p ? p.killed / p.total : 0
               const color = key === 'mythic'
-                ? (ratio === 1 ? '#c89b3c' : ratio >= 0.5 ? '#a78bfa' : ratio > 0 ? '#60a5fa' : '#1a2644')
+                ? (ratio === 1 ? '#c89b3c' : ratio >= 0.5 ? '#a78bfa' : ratio > 0 ? '#7c3aed' : '#1a2644')
+                : key === 'heroic'
+                ? (ratio === 1 ? '#c89b3c' : ratio >= 0.5 ? '#60a5fa' : ratio > 0 ? '#3b82f6' : '#1a2644')
                 : (ratio === 1 ? '#c89b3c' : ratio >= 0.5 ? '#4ade80' : ratio > 0 ? '#86efac' : '#1a2644')
               return (
                 <div
@@ -187,9 +190,11 @@ export default async function RosterPage() {
         {RAIDS.map(raid => {
           const members = guild.members.filter(m => m.raidProgress[raid.id])
           const bestMythic = Math.max(...members.map(m => m.raidProgress[raid.id]?.mythic?.killed || 0))
+          const bestHeroic = Math.max(...members.map(m => m.raidProgress[raid.id]?.heroic?.killed || 0))
           const bestNormal = Math.max(...members.map(m => m.raidProgress[raid.id]?.normal?.killed || 0))
           const total = raid.bosses.length
           const pctM = Math.round((bestMythic / total) * 100)
+          const pctH = Math.round((bestHeroic / total) * 100)
           const pctN = Math.round((bestNormal / total) * 100)
           return (
             <div key={raid.id} className="card p-4">
@@ -205,6 +210,17 @@ export default async function RosterPage() {
                 <div className="h-1.5 bg-void-800 rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700"
                     style={{ width: `${pctN}%`, backgroundColor: pctN === 100 ? '#c89b3c' : '#4ade80' }} />
+                </div>
+              </div>
+              {/* Heroic */}
+              <div className="mb-2">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold text-blue-400">Héroïque</span>
+                  <span className="text-[10px] font-bold text-blue-400">{bestHeroic}/{total}</span>
+                </div>
+                <div className="h-1.5 bg-void-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pctH}%`, backgroundColor: pctH === 100 ? '#c89b3c' : '#60a5fa' }} />
                 </div>
               </div>
               {/* Mythic */}
