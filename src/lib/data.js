@@ -81,9 +81,9 @@ export async function fetchGuildData() {
 
         // ── Raid progress ──────────────────────────────────────────────────────
         const raidProgress = {
-          40: { mythic: { killed: 0, total: 7 }, heroic: { killed: 0, total: 7 }, normal: { killed: 0, total: 7 } },
-          41: { mythic: { killed: 0, total: 5 }, heroic: { killed: 0, total: 5 }, normal: { killed: 0, total: 5 } },
-          42: { mythic: { killed: 0, total: 6 }, heroic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } },
+          40: { mythic: { killed: 0, total: 6 }, heroic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } },
+          41: { mythic: { killed: 0, total: 1 }, heroic: { killed: 0, total: 1 }, normal: { killed: 0, total: 1 } },
+          42: { mythic: { killed: 0, total: 2 }, heroic: { killed: 0, total: 2 }, normal: { killed: 0, total: 2 } },
         }
         if (raids?.expansions) {
           for (const exp of raids.expansions) {
@@ -198,9 +198,9 @@ export async function fetchPlayerData(name) {
 
     // ── Raid progress ─────────────────────────────────────────────────────────
     const raidProgress = {
-      40: { mythic: { killed: 0, total: 7 }, heroic: { killed: 0, total: 7 }, normal: { killed: 0, total: 7 } },
-      41: { mythic: { killed: 0, total: 5 }, heroic: { killed: 0, total: 5 }, normal: { killed: 0, total: 5 } },
-      42: { mythic: { killed: 0, total: 6 }, heroic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } },
+      40: { mythic: { killed: 0, total: 6 }, heroic: { killed: 0, total: 6 }, normal: { killed: 0, total: 6 } },
+      41: { mythic: { killed: 0, total: 1 }, heroic: { killed: 0, total: 1 }, normal: { killed: 0, total: 1 } },
+      42: { mythic: { killed: 0, total: 2 }, heroic: { killed: 0, total: 2 }, normal: { killed: 0, total: 2 } },
     }
     if (raids?.expansions) {
       for (const exp of raids.expansions) {

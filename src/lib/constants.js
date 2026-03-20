@@ -44,13 +44,12 @@ export const RAIDS = [
     name: 'The Voidspire',
     shortName: 'TVS',
     bosses: [
-      { id: 9001, name: "Kael'thas Reborn",        order: 1 },
-      { id: 9002, name: 'The Eternal Warden',       order: 2 },
-      { id: 9003, name: "Shadow of Quel'delar",     order: 3 },
-      { id: 9004, name: 'Void Chorus',              order: 4 },
-      { id: 9005, name: 'Liadrin the Fallen',       order: 5 },
-      { id: 9006, name: "Xal'atath",                order: 6 },
-      { id: 9007, name: 'Midnight Falls',           order: 7 },
+      { id: 9001, name: 'Imperator Averzian',    order: 1 },
+      { id: 9002, name: 'Vorasius',              order: 2 },
+      { id: 9003, name: 'Fallen-King Salhadaar', order: 3 },
+      { id: 9004, name: 'Vaelgor & Ezzorak',     order: 4 },
+      { id: 9005, name: 'Lightblinded Vanguard', order: 5 },
+      { id: 9006, name: 'Crown of the Cosmos',   order: 6 },
     ],
   },
   {
@@ -58,11 +57,7 @@ export const RAIDS = [
     name: 'The Dreamrift',
     shortName: 'TDR',
     bosses: [
-      { id: 9010, name: "Ysera's Echo",             order: 1 },
-      { id: 9011, name: 'The Dream Weaver',         order: 2 },
-      { id: 9012, name: 'Corruption of Nordrassil', order: 3 },
-      { id: 9013, name: "Elune's Torment",          order: 4 },
-      { id: 9014, name: 'The Shattered Aspect',     order: 5 },
+      { id: 9010, name: 'Chimaerus', order: 1 },
     ],
   },
   {
@@ -70,12 +65,8 @@ export const RAIDS = [
     name: "March on Quel'Danas",
     shortName: 'MQD',
     bosses: [
-      { id: 9020, name: 'Harbor Siege Commander',   order: 1 },
-      { id: 9021, name: 'High Arcanist Vandiel',    order: 2 },
-      { id: 9022, name: "Sunwell's Corruption",     order: 3 },
-      { id: 9023, name: "Kil'jaeden's Echo",        order: 4 },
-      { id: 9024, name: 'The Eternal Flame',        order: 5 },
-      { id: 9025, name: 'Midnight',                 order: 6 },
+      { id: 9020, name: "Belo'ren, Child of Al'ar", order: 1 },
+      { id: 9021, name: "Midnight Falls (L'ura)",   order: 2 },
     ],
   },
 ]
