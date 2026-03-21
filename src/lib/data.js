@@ -7,9 +7,16 @@ import {
   getCharacterRaids,
   getCharacterEquipment,
 } from './blizzard'
-import { wclQuery, CHARACTER_ZONE_RANKINGS_QUERY } from './wcl'
+import {
+  wclQuery,
+  CHARACTER_ZONE_RANKINGS_QUERY,
+  parseWclZoneRankings,
+  aggregateWclParsesFromZones,
+  getWclZoneRankingMetric,
+  getWclParseKind,
+} from './wcl'
 import { MOCK_GUILD } from './mock-data'
-import { RAIDS, DUNGEONS } from './constants'
+import { RAIDS, DUNGEONS, getWclZoneIdsForParses } from './constants'
 
 const TANK_SPECS   = ['Blood', 'Protection', 'Guardian', 'Brewmaster', 'Vengeance']
 const HEALER_SPECS = ['Holy', 'Discipline', 'Restoration', 'Mistweaver', 'Preservation']
@@ -27,6 +34,79 @@ const useBlizzard = () =>
 const useWCL = () =>
   !!process.env.WCL_CLIENT_ID &&
   process.env.WCL_CLIENT_ID !== 'your_wcl_client_id'
+
+/**
+ * Parses WCL : métrique `hps` (soigneur) ou `dps` (tank + DPS), une requête par zone, puis agrégation.
+ */
+async function fetchZoneWclParses(name, serverSlug, serverRegion, role) {
+  const parseKind = getWclParseKind(role)
+  const empty = () => ({
+    best: 0,
+    median: 0,
+    kills: 0,
+    parseKind,
+    zoneIds: [],
+    metric: null,
+    difficulty: null,
+    partition: null,
+    size: null,
+    bestPerformanceRaw: null,
+    medianPerformanceRaw: null,
+    allStars: [],
+    encounters: [],
+  })
+  if (!useWCL()) return empty()
+  const zoneIds = getWclZoneIdsForParses()
+  if (!zoneIds.length) return empty()
+  const metric = getWclZoneRankingMetric(role)
+  if (process.env.DEBUG_WCL === '1') {
+    console.warn('[fetchZoneWclParses]', { name, metric, zoneIds })
+  }
+  try {
+    const parts = await Promise.all(
+      zoneIds.map(async zoneID => {
+        try {
+          const wclResult = await wclQuery(CHARACTER_ZONE_RANKINGS_QUERY, {
+            name,
+            serverSlug,
+            serverRegion: String(serverRegion).toLowerCase(),
+            zoneID,
+            metric,
+          })
+          const z = wclResult?.characterData?.character?.zoneRankings
+          return parseWclZoneRankings(z, zoneID)
+        } catch (err) {
+          if (process.env.DEBUG_WCL === '1') {
+            console.warn('[fetchZoneWclParses] zone failed', { name, zoneID, metric, message: err?.message })
+          }
+          return parseWclZoneRankings(null, zoneID)
+        }
+      })
+    )
+    return { ...aggregateWclParsesFromZones(parts), parseKind }
+  } catch (e) {
+    console.error('[fetchZoneWclParses]', name, e.message)
+    return empty()
+  }
+}
+
+/** Ajoute `wcl` à chaque membre (API WCL ou zéros si désactivé). Par paquets pour limiter la charge. */
+async function enrichMembersWithWclParses(members, meta) {
+  const reg = meta.region.toLowerCase()
+  const chunkSize = 8
+  const out = []
+  for (let i = 0; i < members.length; i += chunkSize) {
+    const slice = members.slice(i, i + chunkSize)
+    const chunk = await Promise.all(
+      slice.map(async m => ({
+        ...m,
+        wcl: await fetchZoneWclParses(m.name, m.realm, reg, m.role),
+      }))
+    )
+    out.push(...chunk)
+  }
+  return out
+}
 
 function guildMeta() {
   // displayName (ex: "Le Chalet du Bonheur") est utilisé pour le slug Blizzard
@@ -130,20 +210,21 @@ export async function fetchGuildData() {
           mythicRating: Math.round(mk?.current_mythic_rating?.rating || 0),
           weeklyKey:    null,
           raidProgress,
-          wcl:          { best: 0, median: 0, kills: 0 },
           bestKeys:     {},
           performance:  { dps: 0, hps: 0 },
         }
       })
     )
 
-    const members = results
+    const sorted = results
       .filter(r => r.status === 'fulfilled' && r.value?.classID > 0)
       .map(r => r.value)
       .sort((a, b) =>
         ({ TANK: 0, HEALER: 1, DPS: 2 }[a.role] ?? 2) -
         ({ TANK: 0, HEALER: 1, DPS: 2 }[b.role] ?? 2)
       )
+
+    const members = await enrichMembersWithWclParses(sorted, meta)
 
     return { ...meta, members: members.length ? members : MOCK_GUILD.members }
   } catch (err) {
@@ -236,25 +317,12 @@ export async function fetchPlayerData(name) {
     }
 
     // ── WCL parses (optional) ─────────────────────────────────────────────────
-    let wcl = { best: 0, median: 0, kills: 0 }
-    if (useWCL()) {
-      try {
-        const wclResult = await wclQuery(CHARACTER_ZONE_RANKINGS_QUERY, {
-          name:         profile.name,
-          serverSlug:   realm,
-          serverRegion: region,
-          zoneID:       40,
-        })
-        const z = wclResult?.characterData?.character?.zoneRankings
-        if (z) {
-          wcl = {
-            best:   Math.round(z.bestPerformanceAverage   || 0),
-            median: Math.round(z.medianPerformanceAverage || 0),
-            kills:  z.kills || 0,
-          }
-        }
-      } catch { /* WCL optionnel */ }
-    }
+    const wcl = await fetchZoneWclParses(
+      profile.name,
+      profile.realm?.slug || realm,
+      region,
+      getSpecRole(spec)
+    )
 
     // ── Equipment ─────────────────────────────────────────────────────────────
     const equipment = (equip?.equipped_items || []).map(item => ({

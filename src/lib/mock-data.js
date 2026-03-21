@@ -177,7 +177,23 @@ export const MOCK_GUILD = {
       bestKeys: { 1: 17, 2: 16, 3: 17, 4: 17, 5: 15, 6: 16, 7: 15, 8: 17 },
       performance: { dps: 404300, hps: 0 },
     },
-  ].map(m => ({ ...m, equipment: makeEquip(m.itemLevel) })),
+  ].map(m => ({
+    ...m,
+    wcl: {
+      ...m.wcl,
+      parseKind: m.role === 'HEALER' ? 'hps' : 'dps',
+      zoneIds: [46],
+      metric: m.role === 'HEALER' ? 'hps' : 'dps',
+      difficulty: 5,
+      partition: 1,
+      size: 20,
+      bestPerformanceRaw: m.wcl.best,
+      medianPerformanceRaw: m.wcl.median,
+      allStars: [],
+      encounters: [],
+    },
+    equipment: makeEquip(m.itemLevel),
+  })),
 }
 
 // ─── Mock World Rankings ────────────────────────────────────────────────────

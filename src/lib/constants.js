@@ -37,10 +37,12 @@ export function getRatingColor(rating) {
 }
 
 // ─── WoW Midnight Season 1 — Raids ────────────────────────────────────────
-// NOTE: Encounter IDs sont des placeholders à mettre à jour via WCL quand Midnight sort
+// NOTE: `id` = clé interne Blizzard/UI. `wclZoneId` = ID zone Warcraft Logs (parses), un par raid.
+// NOTE: Encounter IDs WCL à aligner quand Midnight est référencé sur WCL.
 export const RAIDS = [
   {
     id: 40,
+    wclZoneId: 46,
     name: 'The Voidspire',
     shortName: 'TVS',
     bosses: [
@@ -54,6 +56,7 @@ export const RAIDS = [
   },
   {
     id: 41,
+    wclZoneId: null,
     name: 'The Dreamrift',
     shortName: 'TDR',
     bosses: [
@@ -62,6 +65,7 @@ export const RAIDS = [
   },
   {
     id: 42,
+    wclZoneId: null,
     name: "March on Quel'Danas",
     shortName: 'MQD',
     bosses: [
@@ -70,6 +74,20 @@ export const RAIDS = [
     ],
   },
 ]
+
+/**
+ * IDs zones Warcraft Logs pour les parses : un `wclZoneId` par entrée de `RAIDS` (plusieurs raids possibles).
+ * Si aucun `wclZoneId` n’est renseigné, repli optionnel sur `WCL_ZONE_ID` dans `.env.local` (un seul ID, pratique pour tester).
+ */
+export function getWclZoneIdsForParses() {
+  const fromRaids = RAIDS.map(r => r.wclZoneId)
+    .filter(id => id != null && Number(id) > 0)
+    .map(Number)
+  if (fromRaids.length) return [...new Set(fromRaids)]
+  const envOne = parseInt(process.env.WCL_ZONE_ID || '', 10)
+  if (!Number.isNaN(envOne) && envOne > 0) return [envOne]
+  return []
+}
 
 // ─── WoW Midnight Season 1 — M+ Dungeons ──────────────────────────────────
 export const DUNGEONS = [
@@ -104,4 +122,28 @@ export const ROLE_META = {
   TANK:   { label: 'Tank',     color: '#60a5fa', bg: 'rgba(96,165,250,0.15)',  icon: '🛡️' },
   HEALER: { label: 'Soigneur', color: '#4ade80', bg: 'rgba(74,222,128,0.15)',  icon: '✚'  },
   DPS:    { label: 'DPS',      color: '#f87171', bg: 'rgba(248,113,113,0.15)', icon: '⚔️' },
+}
+
+/** Libellé court du type de parse WCL (aligné sur `wcl.parseKind` : hps | dps). */
+export const WCL_PARSE_KIND_LABEL = {
+  hps: 'HPS',
+  dps: 'DPS',
+}
+
+/** IDs difficulté WCL (zoneRankings.difficulty). */
+export const WCL_DIFFICULTY_LABEL = {
+  1: 'LFR',
+  2: 'Facile',
+  3: 'Normal',
+  4: 'Héroïque',
+  5: 'Mythique',
+}
+
+/** Affiche le throughput boss (DPS ou HPS selon parseKind). */
+export function formatWclThroughput(amount, parseKind) {
+  if (amount == null || Number.isNaN(Number(amount))) return '—'
+  const n = Number(amount)
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`
+  return Math.round(n).toLocaleString()
 }

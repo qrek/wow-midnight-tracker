@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { fetchPlayerData } from '@/lib/data'
-import { WOW_CLASSES, RAIDS, DUNGEONS, getParseColor, getRatingColor } from '@/lib/constants'
+import { WOW_CLASSES, RAIDS, DUNGEONS, getParseColor, getRatingColor, WCL_PARSE_KIND_LABEL } from '@/lib/constants'
+import { WclPlayerDetail } from '@/components/wcl-player-detail'
 
 async function getPlayerData(name) {
   return fetchPlayerData(name)
@@ -135,6 +136,8 @@ export default async function PlayerPage({ params }) {
   const cls         = WOW_CLASSES[player.classID]
   const ratingColor = getRatingColor(player.mythicRating)
   const parseColor  = getParseColor(player.wcl.best)
+  const parseKind   = player.wcl?.parseKind || 'dps'
+  const parseShort  = WCL_PARSE_KIND_LABEL[parseKind] || WCL_PARSE_KIND_LABEL.dps
   const totalKills  = Object.values(player.raidProgress).reduce((s, p) => s + (p.mythic?.killed || 0), 0)
   const totalBosses = Object.values(player.raidProgress).reduce((s, p) => s + (p.mythic?.total  || 0), 0)
 
@@ -184,7 +187,7 @@ export default async function PlayerPage({ params }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6">
         <StatBox label="Item Level" value={player.itemLevel} />
         <StatBox label="M+ Rating" value={player.mythicRating.toLocaleString()} color={ratingColor} />
-        <StatBox label="Best Parse" value={`${player.wcl.best}%`} color={parseColor} />
+        <StatBox label={`Meilleur parse (${parseShort})`} value={`${player.wcl.best}%`} color={parseColor} />
         <StatBox label="Boss Kills M" value={`${totalKills}/${totalBosses}`} color="#c89b3c" />
       </div>
 
@@ -335,29 +338,7 @@ export default async function PlayerPage({ params }) {
         </div>
       </div>
 
-      {/* WCL Performance */}
-      <div className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-void-400 mb-4">
-          Performance WarcraftLogs
-        </h2>
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
-          {[
-            { label: 'Meilleur parse',  value: player.wcl.best,   color: getParseColor(player.wcl.best)   },
-            { label: 'Parse médian',    value: player.wcl.median, color: getParseColor(player.wcl.median) },
-            { label: 'Total kills',     value: player.wcl.kills,  color: '#c89b3c'                         },
-          ].map(stat => (
-            <div key={stat.label} className="card p-4 text-center">
-              <div className="text-xs text-void-400 mb-2">{stat.label}</div>
-              <div className="text-xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
-              {typeof stat.value === 'number' && stat.value <= 100 && (
-                <div className="mt-2 h-1 bg-void-800 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${stat.value}%`, backgroundColor: stat.color }} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <WclPlayerDetail wcl={player.wcl} />
 
       {/* Armory */}
       <div className="mt-6">

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { fetchGuildData } from '@/lib/data'
-import { WOW_CLASSES, RAIDS, DUNGEONS, getParseColor, getRatingColor } from '@/lib/constants'
+import { WOW_CLASSES, RAIDS, DUNGEONS, getParseColor, getRatingColor, WCL_PARSE_KIND_LABEL } from '@/lib/constants'
 
 async function getGuildData() {
   return fetchGuildData()
@@ -87,6 +87,8 @@ function RaidProgressDots({ progress }) {
 function PlayerCard({ player }) {
   const cls = WOW_CLASSES[player.classID]
   const ratingColor = getRatingColor(player.mythicRating)
+  const parseKind = player.wcl?.parseKind || 'dps'
+  const parseLabel = WCL_PARSE_KIND_LABEL[parseKind] || WCL_PARSE_KIND_LABEL.dps
 
   return (
     <Link href={`/player/${player.name.toLowerCase()}`}>
@@ -125,10 +127,15 @@ function PlayerCard({ player }) {
         {/* WCL parse */}
         <div className="mb-3">
           <div className="flex justify-between text-xs text-void-400 mb-1">
-            <span>Meilleur parse WCL</span>
+            <span>Meilleur parse ({parseLabel})</span>
             <span className="text-void-500">Médian: {player.wcl.median}</span>
           </div>
           <ParseBar value={player.wcl.best} />
+          {player.wcl.allStars?.[0]?.rankPercent != null && (
+            <div className="text-[10px] text-void-600 mt-1">
+              All Stars : {player.wcl.allStars[0].rankPercent.toFixed(1)}%
+            </div>
+          )}
         </div>
 
         {/* Raid progress */}

@@ -126,7 +126,7 @@ export default function ComparePage() {
               color2={getRatingColor(p2.mythicRating)}
             />
             <CompareBar
-              label="Best Parse WCL"
+              label="Meilleur parse WCL (HPS ou DPS selon rôle)"
               val1={p1.wcl.best} val2={p2.wcl.best}
               max={100}
               color1={getParseColor(p1.wcl.best)}
