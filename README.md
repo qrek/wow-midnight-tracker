@@ -36,7 +36,7 @@ cp .env.local.example .env.local
 
 **WarcraftLogs API :**
 1. Va sur [warcraftlogs.com/api/clients](https://www.warcraftlogs.com/api/clients/)
-2. Crée un nouveau client (type : "Public")
+2. Crée un nouveau client sans cocher le type public
 3. Copie `client_id` et `client_secret` dans `.env.local`
 
 **Blizzard API :**
